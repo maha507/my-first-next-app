@@ -1,43 +1,24 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../components/Navbar';
-import StudentProfile from '../../components/StudentProfile';
+import Navbar from '../../../components/Navbar';
+import StudentForm from '../../../components/StudentForm';
 import { StudentStorage } from '@/lib/studentData';
 
-export default function StudentDetailsPage({ params }) {
+export default function EditStudentPage({ params }) {
     const router = useRouter();
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadStudent();
-    }, [params.id]);
-
-    const loadStudent = () => {
-        setTimeout(() => {
-            const foundStudent = StudentStorage.getStudentById(params.id);
-            if (foundStudent) {
-                setStudent(foundStudent);
-            } else {
-                router.push('/students');
-            }
-            setLoading(false);
-        }, 300);
-    };
-
-    const handleDelete = async () => {
-        if (confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
-            try {
-                StudentStorage.deleteStudent(params.id);
-                alert('Student deleted successfully!');
-                router.push('/students');
-            } catch (error) {
-                console.error('Error deleting student:', error);
-                alert('Error deleting student. Please try again.');
-            }
+        const foundStudent = StudentStorage.getStudentById(params.id);
+        if (foundStudent) {
+            setStudent(foundStudent);
+        } else {
+            router.push('/students');
         }
-    };
+        setLoading(false);
+    }, [params.id, router]);
 
     if (loading) {
         return (
@@ -45,7 +26,7 @@ export default function StudentDetailsPage({ params }) {
                 <Navbar />
                 <div className="container">
                     <div className="text-center" style={{ padding: '60px', color: 'white' }}>
-                        <div style={{ fontSize: '1.2rem' }}>Loading student details...</div>
+                        <div style={{ fontSize: '1.2rem' }}>Loading...</div>
                     </div>
                 </div>
             </>
@@ -70,7 +51,7 @@ export default function StudentDetailsPage({ params }) {
         <>
             <Navbar />
             <div className="container">
-                <StudentProfile student={student} onDelete={handleDelete} />
+                <StudentForm student={student} isEdit={true} />
             </div>
         </>
     );

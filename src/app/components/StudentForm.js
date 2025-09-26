@@ -1,30 +1,63 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdSave, MdPerson, MdEmail, MdPhone, MdCalendarToday, MdBook, MdLocationOn, MdStars } from 'react-icons/md';
+import { courseEmojis, getRandomEmojiForCourse, StudentStorage } from '@/lib/studentData';
 
 export default function StudentForm({ student = null, isEdit = false }) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        firstName: student?.firstName || '',
-        lastName: student?.lastName || '',
-        email: student?.email || '',
-        studentId: student?.studentId || '',
-        phone: student?.phone || '',
-        dateOfBirth: student?.dateOfBirth || '',
-        course: student?.course || '',
-        year: student?.year || '',
-        gpa: student?.gpa || '',
-        address: student?.address || '',
-        profileImage: student?.profileImage || '/images/default-avatar.jpg'
+        firstName: '',
+        lastName: '',
+        email: '',
+        studentId: '',
+        phone: '',
+        dateOfBirth: '',
+        course: '',
+        year: '',
+        gpa: '',
+        address: '',
+        profileImage: '🧑‍🎓'
     });
+
+    // Initialize form data
+    useEffect(() => {
+        if (isEdit && student) {
+            setFormData(student);
+        } else if (!isEdit) {
+            // Generate new student ID for new students
+            const newStudentId = StudentStorage.generateStudentId();
+            setFormData(prev => ({
+                ...prev,
+                studentId: newStudentId
+            }));
+        }
+    }, [student, isEdit]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        // If course changes, suggest a random emoji for that course
+        if (name === 'course' && value) {
+            const suggestedEmoji = getRandomEmojiForCourse(value);
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+                profileImage: suggestedEmoji
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    };
+
+    const handleEmojiSelect = (emoji) => {
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            profileImage: emoji
         }));
     };
 
@@ -33,36 +66,102 @@ export default function StudentForm({ student = null, isEdit = false }) {
         setLoading(true);
 
         try {
-            const url = isEdit ? `/api/students/${student.id}` : '/api/students';
-            const method = isEdit ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            if (response.ok) {
-                router.push('/students');
-                router.refresh();
+            if (isEdit) {
+                // Update existing student
+                StudentStorage.updateStudent(student.id, formData);
+                alert('Student updated successfully!');
             } else {
-                alert('Error saving student');
+                // Add new student
+                StudentStorage.addStudent(formData);
+                alert('Student added successfully!');
             }
+
+            // Navigate back to students list
+            router.push('/students');
+
+            // Trigger a page refresh to show updated data
+            window.location.reload();
+
         } catch (error) {
-            console.error('Error:', error);
-            alert('Error saving student');
+            console.error('Error saving student:', error);
+            alert('Error saving student. Please try again.');
         } finally {
             setLoading(false);
         }
     };
+
+    // Get available emojis for current course
+    const availableEmojis = formData.course ?
+        [...courseEmojis[formData.course], '🧑‍🎓', '👨‍🎓', '👩‍🎓', '😊', '😎', '🤓', '🙂', '😄', '🤗'] :
+        ['🧑‍🎓', '👨‍🎓', '👩‍🎓', '😊', '😎', '🤓', '🙂', '😄', '🤗', '👨‍💻', '👩‍💻', '👨‍💼', '👩‍💼'];
 
     return (
         <form onSubmit={handleSubmit} className="card">
             <h2 style={{ marginBottom: '30px', fontSize: '1.8rem', fontWeight: '600', color: '#667eea' }}>
                 {isEdit ? 'Edit Student' : 'Add New Student'}
             </h2>
+
+            {/* Avatar Selection */}
+            <div className="form-group" style={{ marginBottom: '30px' }}>
+                <label className="form-label">Choose Avatar</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div
+                        style={{
+                            width: '80px',
+                            height: '80px',
+                            backgroundColor: '#667eea',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '40px',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)',
+                            border: '4px solid white'
+                        }}
+                    >
+                        {formData.profileImage}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, 50px)',
+                            gap: '10px',
+                            maxHeight: '120px',
+                            overflowY: 'auto',
+                            padding: '10px',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderRadius: '12px'
+                        }}>
+                            {availableEmojis.map((emoji, index) => (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    onClick={() => handleEmojiSelect(emoji)}
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        border: formData.profileImage === emoji ? '2px solid #667eea' : '2px solid transparent',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'white',
+                                        fontSize: '20px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
+                                    onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="grid grid-cols-2" style={{ marginBottom: '20px' }}>
                 <div className="form-group">
@@ -123,6 +222,8 @@ export default function StudentForm({ student = null, isEdit = false }) {
                         onChange={handleChange}
                         className="form-input"
                         required
+                        readOnly={!isEdit}
+                        style={{ backgroundColor: !isEdit ? '#f5f5f5' : 'white' }}
                     />
                 </div>
             </div>

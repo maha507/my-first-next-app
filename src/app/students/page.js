@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import StudentCard from '../components/StudentCard';
-import { Search, Plus, Users } from 'lucide-react';
+import { FaSearch, FaPlus, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
+import { StudentStorage } from '@/lib/studentData';
 
 export default function StudentsPage() {
     const [students, setStudents] = useState([]);
@@ -12,38 +13,34 @@ export default function StudentsPage() {
     const [filteredStudents, setFilteredStudents] = useState([]);
 
     useEffect(() => {
-        fetchStudents();
+        loadStudents();
     }, []);
 
     useEffect(() => {
-        if (searchTerm.trim() === '') {
-            setFilteredStudents(students);
-        } else {
-            const filtered = students.filter(student =>
-                student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                student.course.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredStudents(filtered);
-        }
+        const filtered = StudentStorage.searchStudents(searchTerm);
+        setFilteredStudents(filtered);
     }, [searchTerm, students]);
 
-    const fetchStudents = async () => {
-        try {
-            const response = await fetch('/api/students');
-            if (response.ok) {
-                const data = await response.json();
-                setStudents(data);
-                setFilteredStudents(data);
-            }
-        } catch (error) {
-            console.error('Error fetching students:', error);
-        } finally {
+    const loadStudents = () => {
+        setLoading(true);
+        // Simulate loading delay
+        setTimeout(() => {
+            const studentsData = StudentStorage.getAllStudents();
+            setStudents(studentsData);
+            setFilteredStudents(studentsData);
             setLoading(false);
-        }
+        }, 300);
     };
+
+    // Refresh data when component becomes visible again
+    useEffect(() => {
+        const handleFocus = () => {
+            loadStudents();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, []);
 
     return (
         <>
@@ -52,7 +49,7 @@ export default function StudentsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
                     <div>
                         <h1 style={{ fontSize: '2.5rem', fontWeight: '700', color: 'white', margin: '0 0 10px 0' }}>
-                            <Users size={40} style={{ display: 'inline', marginRight: '15px' }} />
+                            <FaUsers size={40} style={{ display: 'inline', marginRight: '15px' }} />
                             Students Directory
                         </h1>
                         <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '1.1rem', margin: 0 }}>
@@ -61,14 +58,14 @@ export default function StudentsPage() {
                     </div>
 
                     <Link href="/students/add" className="btn btn-primary">
-                        <Plus size={16} />
+                        <FaPlus size={16} />
                         Add New Student
                     </Link>
                 </div>
 
                 <div className="card" style={{ marginBottom: '30px' }}>
                     <div style={{ position: 'relative' }}>
-                        <Search
+                        <FaSearch
                             size={20}
                             style={{
                                 position: 'absolute',
@@ -89,13 +86,24 @@ export default function StudentsPage() {
                     </div>
                 </div>
 
+                {/* Refresh button */}
+                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                    <button
+                        onClick={loadStudents}
+                        className="btn btn-secondary"
+                        disabled={loading}
+                    >
+                        {loading ? 'Loading...' : 'Refresh Students'}
+                    </button>
+                </div>
+
                 {loading ? (
                     <div className="text-center" style={{ padding: '60px', color: 'white' }}>
                         <div style={{ fontSize: '1.2rem' }}>Loading students...</div>
                     </div>
                 ) : filteredStudents.length === 0 ? (
                     <div className="card text-center" style={{ padding: '60px' }}>
-                        <Users size={64} style={{ color: '#667eea', marginBottom: '20px' }} />
+                        <FaUsers size={64} style={{ color: '#667eea', marginBottom: '20px' }} />
                         <h3 style={{ color: '#667eea', marginBottom: '15px' }}>
                             {searchTerm ? 'No students found' : 'No students yet'}
                         </h3>
@@ -107,7 +115,7 @@ export default function StudentsPage() {
                         </p>
                         {!searchTerm && (
                             <Link href="/students/add" className="btn btn-primary">
-                                <Plus size={16} />
+                                <FaPlus size={16} />
                                 Add First Student
                             </Link>
                         )}

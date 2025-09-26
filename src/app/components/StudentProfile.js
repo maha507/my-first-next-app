@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 import { MdEmail, MdPhone, MdCalendarToday, MdBook, MdLocationOn, MdStars, MdEdit, MdDelete, MdArrowBack } from 'react-icons/md';
 import Link from 'next/link';
 
@@ -11,6 +10,9 @@ export default function StudentProfile({ student, onDelete }) {
             day: 'numeric'
         });
     };
+
+    // Check if profileImage is an emoji (single character) or URL
+    const isEmoji = student.profileImage && student.profileImage.length <= 4;
 
     return (
         <div className="card">
@@ -32,13 +34,26 @@ export default function StudentProfile({ student, onDelete }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '40px' }}>
-                <Image
-                    src={student.profileImage || '/images/default-avatar.jpg'}
-                    alt={`${student.firstName} ${student.lastName}`}
-                    width={150}
-                    height={150}
-                    className="avatar avatar-lg"
-                />
+                <div
+                    className="emoji-avatar-large"
+                    style={{
+                        width: '150px',
+                        height: '150px',
+                        backgroundColor: '#667eea',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: isEmoji ? '80px' : '60px',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+                        border: '6px solid white',
+                        marginBottom: '20px'
+                    }}
+                >
+                    {isEmoji ? student.profileImage : `${student.firstName[0]}${student.lastName[0]}`}
+                </div>
                 <h1 style={{ margin: '20px 0 5px', fontSize: '2.5rem', fontWeight: '700', color: '#667eea' }}>
                     {student.firstName} {student.lastName}
                 </h1>

@@ -1,28 +1,34 @@
 'use client';
 import Link from 'next/link';
-import Image from 'next/image';
 import { MdEmail, MdPhone, MdCalendarToday, MdBook, MdStars, MdVisibility } from 'react-icons/md';
 
 export default function StudentCard({ student }) {
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
+    // Check if profileImage is an emoji (single character) or URL
+    const isEmoji = student.profileImage && student.profileImage.length <= 4;
 
     return (
         <div className="card">
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <Image
-                    src={student.profileImage || '/images/default-avatar.jpg'}
-                    alt={`${student.firstName} ${student.lastName}`}
-                    width={80}
-                    height={80}
-                    className="avatar"
-                    style={{ margin: '0 auto' }}
-                />
+                <div
+                    className="emoji-avatar"
+                    style={{
+                        width: '80px',
+                        height: '80px',
+                        backgroundColor: '#667eea',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto',
+                        fontSize: isEmoji ? '40px' : '24px',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)',
+                        border: '4px solid white'
+                    }}
+                >
+                    {isEmoji ? student.profileImage : `${student.firstName[0]}${student.lastName[0]}`}
+                </div>
                 <h3 style={{ margin: '15px 0 5px', fontSize: '1.3rem', fontWeight: '600' }}>
                     {student.firstName} {student.lastName}
                 </h3>
@@ -34,7 +40,7 @@ export default function StudentCard({ student }) {
             <div style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                     <MdEmail size={16} style={{ marginRight: '8px', color: '#667eea' }} />
-                    <span style={{ fontSize: '0.9rem' }}>{student.email}</span>
+                    <span style={{ fontSize: '0.9rem', wordBreak: 'break-word' }}>{student.email}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                     <MdPhone size={16} style={{ marginRight: '8px', color: '#667eea' }} />
