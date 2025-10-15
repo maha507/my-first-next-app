@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../../components/Navbar';
 import StudentForm from '../../../components/StudentForm';
@@ -9,16 +9,18 @@ export default function EditStudentPage({ params }) {
     const router = useRouter();
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
+    const resolvedParams = use(params);
+    const studentId = resolvedParams.id;
 
     useEffect(() => {
-        const foundStudent = StudentStorage.getStudentById(params.id);
+        const foundStudent = StudentStorage.getStudentById(studentId);
         if (foundStudent) {
             setStudent(foundStudent);
         } else {
             router.push('/students');
         }
         setLoading(false);
-    }, [params.id, router]);
+    }, [studentId, router]);
 
     if (loading) {
         return (

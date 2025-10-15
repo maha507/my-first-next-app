@@ -1,75 +1,41 @@
 import { NextResponse } from 'next/server';
-
-// In-memory storage for demo (in production, use a database)
-let students = [
-    {
-        id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@email.com',
-        studentId: 'STU001',
-        phone: '+1 234-567-8900',
-        dateOfBirth: '2000-05-15',
-        course: 'Computer Science',
-        year: '3rd Year',
-        gpa: '3.8',
-        address: '123 Main St, City, State',
-        profileImage: '/images/default-avatar.jpg',
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-    },
-    {
-        id: '2',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane.smith@email.com',
-        studentId: 'STU002',
-        phone: '+1 234-567-8901',
-        dateOfBirth: '1999-08-22',
-        course: 'Business Administration',
-        year: '2nd Year',
-        gpa: '3.9',
-        address: '456 Oak Ave, City, State',
-        profileImage: '/images/default-avatar.jpg',
-        createdAt: '2024-01-02T00:00:00Z',
-        updatedAt: '2024-01-02T00:00:00Z'
-    }
-];
+import { publishStudentNotification } from '@/lib/ably';
+import * as dbMemory from '@/lib/db-memory';
 
 export async function GET(request) {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
+    try {
+        const { searchParams } = new URL(request.url);
+        const search = searchParams.get('search');
 
-    let filteredStudents = students;
+        const students = await dbMemory.getStudents(search);
 
-    if (search) {
-        const lowercaseSearch = search.toLowerCase();
-        filteredStudents = students.filter(student =>
-            student.firstName.toLowerCase().includes(lowercaseSearch) ||
-            student.lastName.toLowerCase().includes(lowercaseSearch) ||
-            student.email.toLowerCase().includes(lowercaseSearch) ||
-            student.studentId.toLowerCase().includes(lowercaseSearch)
+        return NextResponse.json(students);
+    } catch (error) {
+        console.error('Error fetching students:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch students' },
+            { status: 500 }
         );
     }
-
-    return NextResponse.json(filteredStudents);
 }
 
 export async function POST(request) {
     try {
+        console.log('[API] POST /api/students - Creating student');
         const body = await request.json();
+        console.log('[API] Student data received:', body);
 
-        const newStudent = {
-            id: Date.now().toString(),
-            ...body,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        const newStudent = await dbMemory.createStudent(body);
+        console.log('[API] Student created in memory:', newStudent);
 
-        students.push(newStudent);
+        // Send Ably notification
+        console.log('[API] Sending Ably notification for student.created');
+        await publishStudentNotification('student.created', newStudent);
+        console.log('[API] Ably notification sent successfully');
 
         return NextResponse.json(newStudent, { status: 201 });
     } catch (error) {
+        console.error('[API] Error creating student:', error);
         return NextResponse.json(
             { error: 'Failed to create student' },
             { status: 500 }

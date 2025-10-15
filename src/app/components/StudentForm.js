@@ -66,25 +66,28 @@ export default function StudentForm({ student = null, isEdit = false }) {
         setLoading(true);
 
         try {
+            console.log('[StudentForm] Submitting form...', { isEdit, formData });
+
             if (isEdit) {
                 // Update existing student
-                StudentStorage.updateStudent(student.id, formData);
-                alert('Student updated successfully!');
+                console.log('[StudentForm] Updating student:', student.id);
+                await StudentStorage.updateStudent(student.id, formData);
+                console.log('[StudentForm] Student updated successfully');
             } else {
                 // Add new student
-                StudentStorage.addStudent(formData);
-                alert('Student added successfully!');
+                console.log('[StudentForm] Adding new student...');
+                await StudentStorage.addStudent(formData);
+                console.log('[StudentForm] Student added successfully');
             }
 
-            // Navigate back to students list
+            console.log('[StudentForm] Navigating back to /students');
+
+            // Navigate back to students list without reload
             router.push('/students');
 
-            // Trigger a page refresh to show updated data
-            window.location.reload();
-
         } catch (error) {
-            console.error('Error saving student:', error);
-            alert('Error saving student. Please try again.');
+            console.error('[StudentForm] Error saving student:', error);
+            alert('Failed to save student. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -199,7 +202,7 @@ export default function StudentForm({ student = null, isEdit = false }) {
                 <div className="form-group">
                     <label className="form-label">
                         <MdEmail size={16} style={{ display: 'inline', marginRight: '5px' }} />
-                        Email
+                        Email (Optional)
                     </label>
                     <input
                         type="email"
@@ -207,7 +210,6 @@ export default function StudentForm({ student = null, isEdit = false }) {
                         value={formData.email}
                         onChange={handleChange}
                         className="form-input"
-                        required
                     />
                 </div>
 
@@ -221,7 +223,6 @@ export default function StudentForm({ student = null, isEdit = false }) {
                         value={formData.studentId}
                         onChange={handleChange}
                         className="form-input"
-                        required
                         readOnly={!isEdit}
                         style={{ backgroundColor: !isEdit ? '#f5f5f5' : 'white' }}
                     />
@@ -232,7 +233,7 @@ export default function StudentForm({ student = null, isEdit = false }) {
                 <div className="form-group">
                     <label className="form-label">
                         <MdPhone size={16} style={{ display: 'inline', marginRight: '5px' }} />
-                        Phone
+                        Phone (Optional)
                     </label>
                     <input
                         type="tel"
@@ -240,14 +241,13 @@ export default function StudentForm({ student = null, isEdit = false }) {
                         value={formData.phone}
                         onChange={handleChange}
                         className="form-input"
-                        required
                     />
                 </div>
 
                 <div className="form-group">
                     <label className="form-label">
                         <MdCalendarToday size={16} style={{ display: 'inline', marginRight: '5px' }} />
-                        Date of Birth
+                        Date of Birth (Optional)
                     </label>
                     <input
                         type="date"
@@ -255,7 +255,6 @@ export default function StudentForm({ student = null, isEdit = false }) {
                         value={formData.dateOfBirth}
                         onChange={handleChange}
                         className="form-input"
-                        required
                     />
                 </div>
             </div>
@@ -264,14 +263,13 @@ export default function StudentForm({ student = null, isEdit = false }) {
                 <div className="form-group">
                     <label className="form-label">
                         <MdBook size={16} style={{ display: 'inline', marginRight: '5px' }} />
-                        Course
+                        Course (Optional)
                     </label>
                     <select
                         name="course"
                         value={formData.course}
                         onChange={handleChange}
                         className="form-input"
-                        required
                     >
                         <option value="">Select Course</option>
                         <option value="Computer Science">Computer Science</option>
@@ -285,14 +283,13 @@ export default function StudentForm({ student = null, isEdit = false }) {
 
                 <div className="form-group">
                     <label className="form-label">
-                        Year
+                        Year (Optional)
                     </label>
                     <select
                         name="year"
                         value={formData.year}
                         onChange={handleChange}
                         className="form-input"
-                        required
                     >
                         <option value="">Select Year</option>
                         <option value="1st Year">1st Year</option>
@@ -306,7 +303,7 @@ export default function StudentForm({ student = null, isEdit = false }) {
             <div className="form-group" style={{ marginBottom: '20px' }}>
                 <label className="form-label">
                     <MdStars size={16} style={{ display: 'inline', marginRight: '5px' }} />
-                    GPA
+                    GPA (Optional)
                 </label>
                 <input
                     type="number"
@@ -317,14 +314,13 @@ export default function StudentForm({ student = null, isEdit = false }) {
                     min="0"
                     max="4"
                     step="0.1"
-                    required
                 />
             </div>
 
             <div className="form-group" style={{ marginBottom: '30px' }}>
                 <label className="form-label">
                     <MdLocationOn size={16} style={{ display: 'inline', marginRight: '5px' }} />
-                    Address
+                    Address (Optional)
                 </label>
                 <textarea
                     name="address"
@@ -332,7 +328,6 @@ export default function StudentForm({ student = null, isEdit = false }) {
                     onChange={handleChange}
                     className="form-input"
                     rows="3"
-                    required
                 />
             </div>
 

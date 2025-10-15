@@ -4,21 +4,35 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:wrangler": "wrangler pages dev .next --compatibility-date=2025-01-01 --binding DB=students-db",
+    "dev:ai": "npm run pages:build && wrangler pages dev .next-deploy --compatibility-date=2025-01-01 --binding AI",
     "build": "next build",
+    "pages:build": "@cloudflare/next-on-pages",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:migrate": "wrangler d1 execute students-db --file=./migrations/0001_create_students_table.sql",
+    "db:migrate:remote": "wrangler d1 execute students-db --remote --file=./migrations/0001_create_students_table.sql",
+    "db:console": "wrangler d1 execute students-db --command",
+    "db:console:remote": "wrangler d1 execute students-db --remote --command",
+    "preview": "wrangler pages dev",
+    "deploy": "wrangler pages deploy"
   },
   "dependencies": {
+    "ably": "^2.14.0",
+    "better-sqlite3": "^12.4.1",
     "lucide-react": "^0.544.0",
-    "next": "15.5.4",
+    "next": "^15.5.2",
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^4.12.0"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
+    "@cloudflare/workers-types": "^4.20251011.0",
     "@tailwindcss/postcss": "^4.1.13",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.13"
+    "tailwindcss": "^4.1.13",
+    "wrangler": "^4.42.2"
   }
 }

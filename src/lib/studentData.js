@@ -128,7 +128,10 @@ export class StudentStorage {
     }
 
     // Add new student
-    static addStudent(studentData) {
+    static async addStudent(studentData) {
+        console.log('[StudentStorage] Adding student...', studentData);
+
+        // First update localStorage for immediate UI update
         const students = this.getAllStudents();
         const newStudent = {
             ...studentData,
@@ -136,34 +139,120 @@ export class StudentStorage {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-
         students.push(newStudent);
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(students));
+        console.log('[StudentStorage] LocalStorage updated with new student:', newStudent.id);
+
+        // Then notify via API (which triggers Ably notification)
+        try {
+            console.log('[StudentStorage] Calling POST /api/students...');
+            const response = await fetch('/api/students', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newStudent),
+            });
+
+            console.log('[StudentStorage] API response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn('[StudentStorage] API call failed:', response.status, errorText);
+            } else {
+                const result = await response.json();
+                console.log('[StudentStorage] ✅ API call successful:', result);
+            }
+        } catch (error) {
+            console.error('[StudentStorage] ❌ Error calling API:', error);
+            // Local storage already updated, so operation still succeeds
+        }
+
         return newStudent;
     }
 
     // Update existing student
-    static updateStudent(id, updatedData) {
+    static async updateStudent(id, updatedData) {
+        console.log('[StudentStorage] Updating student:', id, updatedData);
+
+        // First update localStorage for immediate UI update
         const students = this.getAllStudents();
         const index = students.findIndex(student => student.id === id);
 
-        if (index !== -1) {
-            students[index] = {
-                ...students[index],
-                ...updatedData,
-                updatedAt: new Date().toISOString()
-            };
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(students));
-            return students[index];
+        if (index === -1) {
+            console.error('[StudentStorage] Student not found:', id);
+            return null;
         }
-        return null;
+
+        const updatedStudent = {
+            ...students[index],
+            ...updatedData,
+            updatedAt: new Date().toISOString()
+        };
+        students[index] = updatedStudent;
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(students));
+        console.log('[StudentStorage] LocalStorage updated for student:', id);
+
+        // Then notify via API (which triggers Ably notification)
+        try {
+            console.log('[StudentStorage] Calling PUT /api/students/' + id);
+            const response = await fetch(`/api/students/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedStudent),
+            });
+
+            console.log('[StudentStorage] API response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn('[StudentStorage] API call failed:', response.status, errorText);
+            } else {
+                const result = await response.json();
+                console.log('[StudentStorage] ✅ API call successful:', result);
+            }
+        } catch (error) {
+            console.error('[StudentStorage] ❌ Error calling API:', error);
+            // Local storage already updated, so operation still succeeds
+        }
+
+        return updatedStudent;
     }
 
     // Delete student
-    static deleteStudent(id) {
+    static async deleteStudent(id) {
+        // Get student before deleting for notification
         const students = this.getAllStudents();
+        const studentToDelete = students.find(s => s.id === id);
+
+        if (!studentToDelete) {
+            return false;
+        }
+
+        // First update localStorage for immediate UI update
         const filteredStudents = students.filter(student => student.id !== id);
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredStudents));
+
+        // Then notify via API (which triggers Ably notification)
+        try {
+            const response = await fetch(`/api/students/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(studentToDelete),
+            });
+
+            if (!response.ok) {
+                console.warn('API call failed, but local storage updated');
+            }
+        } catch (error) {
+            console.error('Error calling API:', error);
+            // Local storage already updated, so operation still succeeds
+        }
+
         return true;
     }
 

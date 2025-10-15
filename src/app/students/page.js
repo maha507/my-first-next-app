@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import StudentCard from '../components/StudentCard';
+import PushNotifications from '../components/PushNotifications';
 import { FaSearch, FaPlus, FaUsers } from 'react-icons/fa';
 import Link from 'next/link';
 import { StudentStorage } from '@/lib/studentData';
@@ -13,6 +14,7 @@ export default function StudentsPage() {
     const [filteredStudents, setFilteredStudents] = useState([]);
 
     useEffect(() => {
+        console.log('[StudentsPage] Component mounted, loading students...');
         loadStudents();
     }, []);
 
@@ -20,6 +22,21 @@ export default function StudentsPage() {
         const filtered = StudentStorage.searchStudents(searchTerm);
         setFilteredStudents(filtered);
     }, [searchTerm, students]);
+
+    // Reload students when page becomes visible (navigating back from form)
+    useEffect(() => {
+        const handleRouteChange = () => {
+            console.log('[StudentsPage] Route changed, reloading students...');
+            loadStudents();
+        };
+
+        // Listen for visibility changes
+        window.addEventListener('visibilitychange', handleRouteChange);
+
+        return () => {
+            window.removeEventListener('visibilitychange', handleRouteChange);
+        };
+    }, []);
 
     const loadStudents = () => {
         setLoading(true);
@@ -45,6 +62,7 @@ export default function StudentsPage() {
     return (
         <>
             <Navbar />
+            <PushNotifications />
             <div className="container">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
                     <div>

@@ -1,77 +1,59 @@
 import { NextResponse } from 'next/server';
-
-// This would typically come from your database
-let students = [
-    {
-        id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@email.com',
-        studentId: 'STU001',
-        phone: '+1 234-567-8900',
-        dateOfBirth: '2000-05-15',
-        course: 'Computer Science',
-        year: '3rd Year',
-        gpa: '3.8',
-        address: '123 Main St, City, State',
-        profileImage: '/images/default-avatar.jpg',
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z'
-    },
-    {
-        id: '2',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane.smith@email.com',
-        studentId: 'STU002',
-        phone: '+1 234-567-8901',
-        dateOfBirth: '1999-08-22',
-        course: 'Business Administration',
-        year: '2nd Year',
-        gpa: '3.9',
-        address: '456 Oak Ave, City, State',
-        profileImage: '/images/default-avatar.jpg',
-        createdAt: '2024-01-02T00:00:00Z',
-        updatedAt: '2024-01-02T00:00:00Z'
-    }
-];
+import { publishStudentNotification } from '@/lib/ably';
+import * as dbMemory from '@/lib/db-memory';
+import { use } from 'react';
 
 export async function GET(request, { params }) {
-    const { id } = params;
-    const student = students.find(s => s.id === id);
-
-    if (!student) {
-        return NextResponse.json(
-            { error: 'Student not found' },
-            { status: 404 }
-        );
-    }
-
-    return NextResponse.json(student);
-}
-
-export async function PUT(request, { params }) {
     try {
-        const { id } = params;
-        const body = await request.json();
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
+        const student = await dbMemory.getStudentById(id);
 
-        const studentIndex = students.findIndex(s => s.id === id);
-
-        if (studentIndex === -1) {
+        if (!student) {
             return NextResponse.json(
                 { error: 'Student not found' },
                 { status: 404 }
             );
         }
 
-        students[studentIndex] = {
-            ...students[studentIndex],
-            ...body,
-            updatedAt: new Date().toISOString()
-        };
-
-        return NextResponse.json(students[studentIndex]);
+        return NextResponse.json(student);
     } catch (error) {
+        console.error('Error fetching student:', error);
+        return NextResponse.json(
+            { error: 'Failed to fetch student' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function PUT(request, { params }) {
+    try {
+        console.log('[API] PUT /api/students/[id] - Updating student');
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
+        const body = await request.json();
+        console.log('[API] Updating student ID:', id, 'Data:', body);
+
+        const updatedStudentData = await dbMemory.updateStudent(id, body);
+
+        if (!updatedStudentData) {
+            console.log('[API] Student not found:', id);
+            return NextResponse.json(
+                { error: 'Student not found' },
+                { status: 404 }
+            );
+        }
+
+        console.log('[API] Student updated:', updatedStudentData);
+
+        // Send Ably notification
+        console.log('[API] Sending Ably notification for student.updated');
+        await publishStudentNotification('student.updated', updatedStudentData);
+        console.log('[API] Ably notification sent successfully');
+
+        return NextResponse.json(updatedStudentData);
+    } catch (error) {
+        console.error('[API] Error updating student:', error);
         return NextResponse.json(
             { error: 'Failed to update student' },
             { status: 500 }
@@ -80,17 +62,28 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-    const { id } = params;
-    const studentIndex = students.findIndex(s => s.id === id);
+    try {
+        console.log('[API] DELETE /api/students/[id] - Deleting student');
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
+        console.log('[API] Deleting student ID:', id);
 
-    if (studentIndex === -1) {
+        // Get student data from request body (sent by client)
+        const body = await request.json().catch(() => null);
+        const studentData = body || { id, name: 'Student' };
+        console.log('[API] Student data for notification:', studentData);
+
+        // Send Ably notification (data comes from client)
+        console.log('[API] Sending Ably notification for student.deleted');
+        await publishStudentNotification('student.deleted', studentData);
+        console.log('[API] Ably notification sent successfully');
+
+        return NextResponse.json({ message: 'Student deleted successfully' });
+    } catch (error) {
+        console.error('[API] Error deleting student:', error);
         return NextResponse.json(
-            { error: 'Student not found' },
-            { status: 404 }
+            { error: 'Failed to delete student' },
+            { status: 500 }
         );
     }
-
-    students.splice(studentIndex, 1);
-
-    return NextResponse.json({ message: 'Student deleted successfully' });
 }

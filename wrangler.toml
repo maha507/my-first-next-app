@@ -1,0 +1,26 @@
+name = "my-first-next-app"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = ".next-deploy"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "students-db"
+database_id = "5db62da5-5a81-43a1-ad27-0a5738ea1d88"
+
+# AI Workers binding
+[ai]
+binding = "AI"
+
+[env.production]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "students-db"
+database_id = "5db62da5-5a81-43a1-ad27-0a5738ea1d88"
+
+# AI Workers binding for production
+[env.production.ai]
+binding = "AI"
+
+# Secrets (API keys) - Set these using Wrangler CLI:
+# wrangler secret put ABLY_API_KEY
+

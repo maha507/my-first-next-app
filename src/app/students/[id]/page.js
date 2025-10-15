@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import StudentProfile from '../../components/StudentProfile';
@@ -9,14 +9,16 @@ export default function StudentDetailsPage({ params }) {
     const router = useRouter();
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
+    const resolvedParams = use(params);
+    const studentId = resolvedParams.id;
 
     useEffect(() => {
         loadStudent();
-    }, [params.id]);
+    }, [studentId]);
 
     const loadStudent = () => {
         setTimeout(() => {
-            const foundStudent = StudentStorage.getStudentById(params.id);
+            const foundStudent = StudentStorage.getStudentById(studentId);
             if (foundStudent) {
                 setStudent(foundStudent);
             } else {
@@ -29,12 +31,10 @@ export default function StudentDetailsPage({ params }) {
     const handleDelete = async () => {
         if (confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
             try {
-                StudentStorage.deleteStudent(params.id);
-                alert('Student deleted successfully!');
+                StudentStorage.deleteStudent(studentId);
                 router.push('/students');
             } catch (error) {
                 console.error('Error deleting student:', error);
-                alert('Error deleting student. Please try again.');
             }
         }
     };
