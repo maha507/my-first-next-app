@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { FaGraduationCap, FaUsers, FaPlus, FaHome, FaRobot } from 'react-icons/fa';
+import { FaGraduationCap, FaUsers, FaPlus, FaHome, FaRobot, FaComments } from 'react-icons/fa';
 
 export default function Navbar() {
     return (
@@ -29,6 +29,12 @@ export default function Navbar() {
                             <Link href="/students/add" className="nav-link">
                                 <FaPlus size={18} style={{ display: 'inline', marginRight: '5px' }} />
                                 Add Student
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href="/chat" className="nav-link">
+                                <FaComments size={18} style={{ display: 'inline', marginRight: '5px' }} />
+                                Chat
                             </Link>
                         </li>
                         <li>

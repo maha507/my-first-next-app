@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import Ably from 'ably';
 import { getEnv } from '@/lib/env';
 
-export async function GET() {
+export async function GET(request) {
     try {
         console.log('[Ably Token] Generating token request...');
+
+        // Get clientId from query parameter
+        const { searchParams } = new URL(request.url);
+        const clientId = searchParams.get('clientId') || `anonymous-${Date.now()}`;
+
+        console.log('[Ably Token] Requested clientId:', clientId);
+
         const env = getEnv();
         const apiKey = env?.ABLY_API_KEY || process.env.ABLY_API_KEY;
 
@@ -23,9 +30,10 @@ export async function GET() {
 
         // Generate token for client with appropriate permissions
         const tokenRequest = await client.auth.createTokenRequest({
-            clientId: `student-app-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            clientId: clientId,
             capability: {
-                'students': ['subscribe', 'history']
+                'students': ['subscribe', 'history'],
+                'chat-room': ['subscribe', 'publish', 'presence', 'history']
             },
             ttl: 3600000 // 1 hour
         });
@@ -46,7 +54,7 @@ export async function GET() {
     }
 }
 
-export async function POST() {
+export async function POST(request) {
     // Also support POST for token requests
-    return GET();
+    return GET(request);
 }
